@@ -113,7 +113,11 @@ jobs:
     env:
       JENKINS_ADMIN_PASSWORD: ${{ github.run_id }}-ci
     steps:
+      # Full history: Jenkins fetches from this checkout, and git does not fetch from a shallow repository
+      # (only a warning, "shallow roots are not allowed to be updated", then no branch at all).
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       # Jenkins checks out the branch "main" from the mounted repository; give a pull request's commit that name.
       - name: Local main branch for Jenkins
         run: git checkout -B main
