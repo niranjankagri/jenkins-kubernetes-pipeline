@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 kubectl delete job smoke -n "$NAMESPACE" --ignore-not-found
 sed -e "s|__VERSION__|$VERSION|g" k8s/smoke-job.yaml | kubectl apply -n "$NAMESPACE" -f -
 
-# Complete or failed, whichever comes first; the logs are shown in both cases.
+# Waits for completion; a failed Job never completes, so failure shows at the timeout. Logs are shown either way.
 if kubectl wait job/smoke -n "$NAMESPACE" --for=condition=complete --timeout=90s; then
   kubectl logs job/smoke -n "$NAMESPACE"
 else
