@@ -1,0 +1,6 @@
+# Ruff (lint + format) for the API tests; the pipeline's "Lint" stage runs both checks.
+line-length = 110
+
+[lint]
+# Default rules plus import sorting, pyupgrade and bugbear.
+extend-select = ["I", "UP", "B"]
