@@ -1,0 +1,12 @@
+# A stable in-cluster address for the pods: http://room-booking:8080 (the smoke Job uses it,
+# the API tests reach it through kubectl port-forward).
+apiVersion: v1
+kind: Service
+metadata:
+  name: room-booking
+spec:
+  selector:
+    app: room-booking
+  ports:
+    - port: 8080
+      targetPort: 8080

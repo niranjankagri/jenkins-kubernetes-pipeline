@@ -1,0 +1,26 @@
+# A smoke test that runs INSIDE the cluster, through the Service's DNS name, the way other services would call
+# room-booking. It checks health and that the expected build answers. scripts/smoke-job.sh fills __VERSION__.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: smoke
+spec:
+  backoffLimit: 0 # one attempt: a failed smoke test must fail the pipeline, not retry quietly
+  activeDeadlineSeconds: 60
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: smoke
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              wget -q -O - http://room-booking:8080/health
+              echo
+              wget -q -O - http://room-booking:8080/version | tee /tmp/version.json
+              echo
+              grep -q '"version":"__VERSION__"' /tmp/version.json
+              echo "smoke OK: build __VERSION__ answers inside the cluster"

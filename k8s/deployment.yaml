@@ -1,0 +1,48 @@
+# room-booking in Kubernetes. scripts/deploy.sh replaces __IMAGE__, __VERSION__ and __COMMIT__ and applies it
+# into a namespace of its own per pipeline run.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: room-booking
+  labels:
+    app: room-booking
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: room-booking
+  template:
+    metadata:
+      labels:
+        app: room-booking
+    spec:
+      containers:
+        - name: app
+          image: __IMAGE__
+          # The image is loaded into the kind cluster by the pipeline, never pulled from a registry.
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: '__VERSION__'
+            - name: APP_COMMIT
+              value: '__COMMIT__'
+          # Ready = may receive traffic; the rollout waits for it. Live = restart the container if it hangs.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
