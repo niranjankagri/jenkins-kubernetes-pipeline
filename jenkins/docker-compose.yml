@@ -13,10 +13,12 @@ services:
       # Local demo default; CI and real setups pass their own value.
       JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-admin}
       JENKINS_URL: http://localhost:8088/
+      # No setup wizard; the job may check out from a local path (/repo); published HTML reports may run their own
+      # scripts (pytest-html builds its table with JavaScript). The CSP is relaxed for this local demo only.
       JAVA_OPTS: >-
         -Djenkins.install.runSetupWizard=false
         -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
-        -Dhudson.model.DirectoryBrowserSupport.CSP="sandbox allow-scripts; default-src 'self' 'unsafe-inline'; img-src 'self' data:"
+        -Dhudson.model.DirectoryBrowserSupport.CSP="sandbox allow-scripts allow-same-origin; default-src 'self' 'unsafe-inline'; img-src 'self' data:"
     volumes:
       - jenkins_home:/var/jenkins_home
       # Docker outside of Docker: the pipeline's docker and kind commands use the host's Docker engine.
