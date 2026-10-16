@@ -1,5 +1,10 @@
 // Declarative pipeline: check, build, deploy to Kubernetes, test the deployment, report.
 // The work is done by the scripts in scripts/ (also used by GitHub Actions); this file orchestrates them.
+
+// Each stage records its JUnit report once and keeps the summary here; the quality gate adds them up.
+// (Recording the same reports again in the gate would count every test twice in Jenkins.)
+def testSummaries = [:]
+
 pipeline {
   agent any
 
@@ -36,7 +41,9 @@ pipeline {
             }
           }
           post {
-            always { junit 'service/reports/unit-tests.xml' }
+            always {
+              script { testSummaries.unit = junit 'service/reports/unit-tests.xml' }
+            }
           }
         }
         stage('Lint tests') {
@@ -91,23 +98,26 @@ pipeline {
         }
       }
       post {
-        always { junit allowEmptyResults: true, testResults: 'tests/reports/*.xml' }
+        always {
+          script { testSummaries.api = junit allowEmptyResults: true, testResults: 'tests/reports/*.xml' }
+        }
       }
     }
 
     stage('Quality gate') {
       steps {
         script {
-          // The junit step's summary covers every report of this build (unit + API).
-          def results = junit testResults: 'service/reports/*.xml, tests/reports/*.xml'
+          def total = testSummaries.values().sum { it.totalCount }
+          def failed = testSummaries.values().sum { it.failCount }
+          def skipped = testSummaries.values().sum { it.skipCount }
           def minimum = params.TEST_SUITE == 'all' ? 20 : 6
-          echo "Tests: ${results.totalCount} run, ${results.failCount} failed, ${results.skipCount} skipped"
-          if (results.failCount > 0) {
-            error("Quality gate: ${results.failCount} test(s) failed")
+          echo "Tests: ${total} run, ${failed} failed, ${skipped} skipped"
+          if (failed > 0) {
+            error("Quality gate: ${failed} test(s) failed")
           }
           // A suite that silently ran (almost) nothing must not pass.
-          if (results.totalCount < minimum) {
-            error("Quality gate: only ${results.totalCount} tests ran, expected at least ${minimum}")
+          if (total < minimum) {
+            error("Quality gate: only ${total} tests ran, expected at least ${minimum}")
           }
         }
       }
