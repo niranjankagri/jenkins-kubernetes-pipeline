@@ -31,7 +31,8 @@ pipeline {
         stage('Unit tests') {
           steps {
             dir('service') {
-              sh 'node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/unit-tests.xml "test/*.test.ts"'
+              // Node's JUnit reporter does not create the folder itself.
+              sh 'mkdir -p reports && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/unit-tests.xml "test/*.test.ts"'
             }
           }
           post {
