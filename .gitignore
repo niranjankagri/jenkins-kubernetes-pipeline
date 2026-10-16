@@ -1,0 +1,14 @@
+# Test reports and dependencies (Jenkins and CI archive the reports instead)
+service/reports/
+tests/reports/
+tests/.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Local kubeconfig written by the scripts
+.kube/
+
+# IDE settings
+.idea/
+.vscode/
