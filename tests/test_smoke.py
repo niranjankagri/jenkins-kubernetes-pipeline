@@ -1,4 +1,4 @@
-"""Smoke tests: the deployment answers and runs the build the pipeline just made. Run before everything else."""
+"""Smoke tests: the deployment answers and runs the build the pipeline just made (also the TEST_SUITE=smoke run)."""
 
 import os
 
