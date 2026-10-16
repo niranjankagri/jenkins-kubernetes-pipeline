@@ -107,9 +107,16 @@ pipeline {
     stage('Quality gate') {
       steps {
         script {
-          def total = testSummaries.values().sum { it.totalCount }
-          def failed = testSummaries.values().sum { it.failCount }
-          def skipped = testSummaries.values().sum { it.skipCount }
+          // A plain loop: the Groovy sandbox rejected Collection.sum() in CI ("Scripts not permitted to use
+          // staticMethod ... DefaultGroovyMethods sum"), and approving methods by hand is not configuration as code.
+          int total = 0
+          int failed = 0
+          int skipped = 0
+          for (summary in testSummaries.values()) {
+            total += summary.totalCount
+            failed += summary.failCount
+            skipped += summary.skipCount
+          }
           def minimum = params.TEST_SUITE == 'all' ? 20 : 6
           echo "Tests: ${total} run, ${failed} failed, ${skipped} skipped"
           if (failed > 0) {
