@@ -12,3 +12,6 @@ __pycache__/
 # IDE settings
 .idea/
 .vscode/
+
+# Console logs downloaded by scripts/run-jenkins-build.sh
+jenkins-build-*.log

@@ -1,0 +1,134 @@
+# CI for the repository itself:
+#   1. checks      unit tests, lint, and the API tests against the service started locally
+#   2. kubernetes  the deployment path without Jenkins: kind cluster, image load, deploy, in-cluster smoke Job,
+#                  API tests through port-forward (the same scripts the Jenkinsfile calls)
+#   3. jenkins     a real Jenkins (the image and JCasC from jenkins/) started on the runner; it runs the
+#                  Jenkinsfile end to end, and the job fails unless the Jenkins build ends with SUCCESS
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Unit tests, lint, API tests (local)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+      - name: Unit tests
+        working-directory: service
+        run: npm run test:junit
+      - name: Install test requirements and lint
+        working-directory: tests
+        run: |
+          pip install -r requirements.txt
+          ruff check .
+          ruff format --check .
+      - name: API tests against the service on this runner
+        run: |
+          (cd service && npm start > ../service.log 2>&1 &)
+          for _ in $(seq 1 20); do curl -sf http://localhost:8080/health && break; sleep 1; done
+          cd tests && BASE_URL=http://localhost:8080 pytest --junitxml=reports/local.xml
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: reports-checks
+          path: |
+            service/reports/
+            tests/reports/
+          retention-days: 14
+
+  kubernetes:
+    name: Deploy to kind and test
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KUBECONFIG: ${{ github.workspace }}/.kube/config
+      NAMESPACE: qa-ci
+      IMAGE: room-booking:ci-${{ github.run_number }}
+      VERSION: ci-${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      # Only the kind binary; the cluster is created by the same script Jenkins uses.
+      - uses: helm/kind-action@v1.15.1
+        with:
+          install_only: true
+          version: v0.33.0
+      - name: Kind cluster
+        run: scripts/kind-up.sh
+      - name: Build the image and load it into the cluster
+        run: |
+          docker build -t "$IMAGE" service
+          kind load docker-image "$IMAGE" --name qa
+      - name: Deploy
+        run: scripts/deploy.sh "$NAMESPACE" "$IMAGE" "$VERSION" "${GITHUB_SHA::7}"
+      - name: In-cluster smoke Job
+        run: scripts/smoke-job.sh "$NAMESPACE" "$VERSION"
+      - name: API tests against the deployment
+        run: |
+          scripts/python-env.sh
+          export PYTHON="$PWD/tests/.venv/bin/python"
+          scripts/api-tests.sh "$NAMESPACE" "$VERSION" smoke 18081
+          scripts/api-tests.sh "$NAMESPACE" "$VERSION" regression 18082
+      - name: Cluster state on failure
+        if: ${{ failure() }}
+        run: |
+          kubectl get all -n "$NAMESPACE" || true
+          kubectl get events -n "$NAMESPACE" --sort-by=.lastTimestamp || true
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: reports-kubernetes
+          path: tests/reports/
+          retention-days: 14
+
+  jenkins:
+    name: Jenkins runs the Jenkinsfile
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      JENKINS_ADMIN_PASSWORD: ${{ github.run_id }}-ci
+    steps:
+      - uses: actions/checkout@v7
+      # Jenkins checks out the branch "main" from the mounted repository; give a pull request's commit that name.
+      - name: Local main branch for Jenkins
+        run: git checkout -B main
+      - name: Start Jenkins (configured as code)
+        run: |
+          export DOCKER_GID="$(stat -c %g /var/run/docker.sock)"
+          docker compose -f jenkins/docker-compose.yml up -d --build --wait
+      - name: Run the pipeline in Jenkins
+        run: scripts/run-jenkins-build.sh
+      - name: Jenkins logs on failure
+        if: ${{ failure() }}
+        run: docker compose -f jenkins/docker-compose.yml logs --tail 200 jenkins
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: jenkins-console-log
+          path: jenkins-build-*.log
+          retention-days: 14
