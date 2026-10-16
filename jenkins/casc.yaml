@@ -1,0 +1,53 @@
+# Jenkins Configuration as Code: the whole controller setup in one file, applied at every start.
+# ${...} values come from the container's environment (docker-compose.yml).
+jenkins:
+  systemMessage: 'Demo controller: room-booking pipeline (build, deploy to Kubernetes, test). Configured as code.'
+  # The demo runs builds on the controller itself. A production setup uses agents (static, Docker or
+  # Kubernetes pods) and sets this to 0.
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          name: Admin
+          password: ${JENKINS_ADMIN_PASSWORD}
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: ${JENKINS_URL:-http://localhost:8088/}
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # Used by the pipeline's notification step (withCredentials). Jenkins masks it in the build log.
+          - string:
+              id: notify-token
+              description: Token for build notifications (demo value unless NOTIFY_TOKEN is set)
+              secret: ${NOTIFY_TOKEN:-demo-notify-token}
+              scope: GLOBAL
+
+# The job, created by Job DSL. Its definition (the Jenkinsfile) comes from the repository mounted at /repo.
+jobs:
+  - script: |
+      pipelineJob('room-booking-pipeline') {
+        description('Builds room-booking, deploys it to a kind Kubernetes cluster and runs the test suites.')
+        logRotator { numToKeep(20) }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('file:///repo') }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+      }

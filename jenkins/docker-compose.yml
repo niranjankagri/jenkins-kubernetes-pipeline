@@ -1,0 +1,36 @@
+# Jenkins in Docker, ready to run the pipeline:
+#   docker compose -f jenkins/docker-compose.yml up -d --build    -> http://localhost:8088 (admin / JENKINS_ADMIN_PASSWORD)
+#   docker compose -f jenkins/docker-compose.yml down             (add -v to delete Jenkins' data)
+name: jenkins-qa
+
+services:
+  jenkins:
+    build: .
+    image: jenkins-qa:local
+    ports:
+      - '8088:8080'
+    environment:
+      # Local demo default; CI and real setups pass their own value.
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-admin}
+      JENKINS_URL: http://localhost:8088/
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=false
+        -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
+        -Dhudson.model.DirectoryBrowserSupport.CSP="sandbox allow-scripts; default-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # Docker outside of Docker: the pipeline's docker and kind commands use the host's Docker engine.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # This repository, read-only: the job checks out the committed main branch from here.
+      - ..:/repo:ro
+    # Membership of the group that owns the Docker socket (its ID differs per machine; CI passes it).
+    group_add:
+      - '${DOCKER_GID:-0}'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fs http://127.0.0.1:8080/login > /dev/null']
+      interval: 5s
+      timeout: 3s
+      retries: 60
+
+volumes:
+  jenkins_home:
