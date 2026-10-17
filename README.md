@@ -47,6 +47,11 @@ dependencies): rooms, bookings with ISO date-times, overlap conflicts (409), cap
 `/health` for the probes and `/version` with the build number. 4 unit tests (`service/test`) and 17 API tests
 (`tests/`).
 
+**Why the service is in this repository:** the tests run against their own copy, started fresh for every run, locally
+and in CI. No shared or hosted environment means no outages, no test data shared between runs, and no change somewhere
+else that breaks these tests; one clone and one command run everything. It is also built for this pipeline: every build
+deploys its own copy to a throwaway kind cluster.
+
 ## Run it
 
 Needs Docker (Docker Desktop on Windows/macOS). Everything else runs in containers.
