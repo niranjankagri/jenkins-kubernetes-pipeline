@@ -12,6 +12,10 @@ export interface VersionInfo {
   commit: string;
 }
 
+/**
+ * Creates the HTTP server (not yet listening). A BookingError becomes JSON with its status and field;
+ * anything unexpected is logged and answered with a 500.
+ */
 export function createServer(store: Store = createStore(), info: VersionInfo = { version: 'dev', commit: 'local' }): Server {
   return createHttpServer((req, res) => {
     handle(req, res, store, info).catch((error: unknown) => {
@@ -25,6 +29,9 @@ export function createServer(store: Store = createStore(), info: VersionInfo = {
   });
 }
 
+/**
+ * All routes: health, version, rooms, list and create bookings, and cancel one by id; anything else is a 404.
+ */
 async function handle(req: IncomingMessage, res: ServerResponse, store: Store, info: VersionInfo): Promise<void> {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const route = `${req.method} ${url.pathname}`;
@@ -48,6 +55,7 @@ async function handle(req: IncomingMessage, res: ServerResponse, store: Store, i
   throw new BookingError(404, `No route for ${route}`);
 }
 
+/** Reads the whole request body as JSON; invalid JSON is a 400. */
 async function readJson(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of req as AsyncIterable<Buffer>) chunks.push(chunk);
@@ -58,6 +66,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
   }
 }
 
+/** Writes a JSON response. */
 function send(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { 'Content-Type': 'application/json' }).end(JSON.stringify(body));
 }

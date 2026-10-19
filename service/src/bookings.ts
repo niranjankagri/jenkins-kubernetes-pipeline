@@ -22,6 +22,7 @@ export class BookingError extends Error {
   readonly status: number;
   readonly field: string | undefined;
 
+  /** status is the HTTP status the server answers with; field names the input that broke the rule. */
   constructor(status: number, message: string, field?: string) {
     super(message);
     this.status = status;
@@ -48,6 +49,10 @@ function parseTime(value: unknown, field: string): Date {
   return date;
 }
 
+/**
+ * Creates an empty in-memory store with the three rooms. Bookings live only as long as the process: every
+ * deployment starts empty, which is why the API tests use a day of their own.
+ */
 export function createStore() {
   let bookings: Booking[] = [];
 

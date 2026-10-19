@@ -19,17 +19,21 @@ class Api:
         self.session = requests.Session()
 
     def get(self, path: str, **kwargs) -> requests.Response:
+        """GET with a 10-second timeout, so a hung service fails the test instead of the build."""
         return self.session.get(f"{self.base_url}{path}", timeout=10, **kwargs)
 
     def post(self, path: str, **kwargs) -> requests.Response:
+        """POST with a 10-second timeout."""
         return self.session.post(f"{self.base_url}{path}", timeout=10, **kwargs)
 
     def delete(self, path: str) -> requests.Response:
+        """DELETE with a 10-second timeout."""
         return self.session.delete(f"{self.base_url}{path}", timeout=10)
 
 
 @pytest.fixture(scope="session")
 def api() -> Api:
+    """One client for the whole run, pointed at BASE_URL."""
     return Api(BASE_URL)
 
 
@@ -45,6 +49,7 @@ def booking(free_day: str):
     """Builds a booking body on the test's own day; keyword arguments override fields."""
 
     def build(**overrides) -> dict:
+        """A valid booking (Atlas, 09:00-10:00 UTC, 3 attendees) with the given fields replaced."""
         body = {
             "roomId": "atlas",
             "title": "Sprint planning",

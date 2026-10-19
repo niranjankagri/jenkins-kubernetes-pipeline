@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BookingError, createStore } from '../src/bookings.ts';
 
+/** A valid booking body (Atlas, one hour, 3 attendees); overrides change single fields. */
 const booking = (overrides: Record<string, unknown> = {}) => ({
   roomId: 'atlas',
   title: 'Sprint planning',

@@ -6,6 +6,7 @@ pytestmark = pytest.mark.regression
 
 
 def test_creates_a_booking_and_lists_it(api, booking, free_day):
+    """A new booking is stored in UTC and is the only one listed for that room and day."""
     created = api.post("/bookings", json=booking())
 
     assert created.status_code == 201
@@ -16,6 +17,7 @@ def test_creates_a_booking_and_lists_it(api, booking, free_day):
 
 
 def test_normalises_time_zones_to_utc(api, booking, free_day):
+    """11:00+02:00 is stored as 09:00 UTC."""
     body = api.post(
         "/bookings", json=booking(start=f"{free_day}T11:00:00+02:00", end=f"{free_day}T12:00:00+02:00")
     )
@@ -24,6 +26,7 @@ def test_normalises_time_zones_to_utc(api, booking, free_day):
 
 
 def test_refuses_an_overlapping_booking_with_409(api, booking, free_day):
+    """An overlapping booking in the same room is a 409 that names the booking it clashes with."""
     api.post("/bookings", json=booking(title="Original"))
 
     clash = api.post("/bookings", json=booking(start=f"{free_day}T09:30:00Z", end=f"{free_day}T10:30:00Z"))
@@ -33,6 +36,7 @@ def test_refuses_an_overlapping_booking_with_409(api, booking, free_day):
 
 
 def test_allows_back_to_back_bookings_and_other_rooms(api, booking, free_day):
+    """A booking that starts when another ends, and the same time in another room, are both allowed."""
     assert api.post("/bookings", json=booking()).status_code == 201
 
     after = api.post("/bookings", json=booking(start=f"{free_day}T10:00:00Z", end=f"{free_day}T11:00:00Z"))
@@ -43,6 +47,7 @@ def test_allows_back_to_back_bookings_and_other_rooms(api, booking, free_day):
 
 
 def test_cancels_a_booking_once(api, booking, free_day):
+    """Cancelling works once; the second cancel is a 404 and the day is empty again."""
     booking_id = api.post("/bookings", json=booking()).json()["id"]
 
     assert api.delete(f"/bookings/{booking_id}").status_code == 204
@@ -63,6 +68,7 @@ def test_cancels_a_booking_once(api, booking, free_day):
     ids=["short-title", "start-not-iso", "end-no-zone", "no-attendees", "over-capacity", "unknown-field"],
 )
 def test_refuses_invalid_bookings_with_the_field(api, booking, overrides, field):
+    """Each invalid value is a 400 that names the broken field."""
     response = api.post("/bookings", json=booking(**overrides))
 
     assert response.status_code == 400
@@ -70,6 +76,7 @@ def test_refuses_invalid_bookings_with_the_field(api, booking, overrides, field)
 
 
 def test_refuses_end_before_start_and_too_long_bookings(api, booking, free_day):
+    """An end before the start and a booking over 8 hours are both refused on the end field."""
     backwards = api.post("/bookings", json=booking(end=f"{free_day}T08:00:00Z"))
     all_day = api.post("/bookings", json=booking(end=f"{free_day}T18:00:00Z"))
 
@@ -78,6 +85,7 @@ def test_refuses_end_before_start_and_too_long_bookings(api, booking, free_day):
 
 
 def test_answers_404_for_an_unknown_room(api, booking):
+    """An unknown room is a 404 with the room in the message."""
     response = api.post("/bookings", json=booking(roomId="nowhere"))
 
     assert response.status_code == 404
@@ -85,6 +93,7 @@ def test_answers_404_for_an_unknown_room(api, booking):
 
 
 def test_answers_400_for_a_body_that_is_not_json(api):
+    """A body that is not JSON is a 400, not a 500."""
     response = api.post("/bookings", data="{not json", headers={"Content-Type": "application/json"})
 
     assert response.status_code == 400
