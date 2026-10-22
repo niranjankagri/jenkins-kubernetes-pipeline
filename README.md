@@ -105,6 +105,11 @@ The published pytest-html report of the regression suite:
    `scripts/run-jenkins-build.sh`, and fails unless the Jenkins build ends with SUCCESS. The console log is
    kept as an artifact.
 
+The JUnit XML of jobs 1 and 2 (artifacts `reports-checks` and `reports-kubernetes`) is collected by
+[Automation Coverage & Quality Intelligence](https://github.com/niranjankagri/automation-coverage-quality-intelligence).
+
+`main` is protected by a ruleset: every change goes through a pull request, and the CI jobs above must pass before it is merged.
+
 ## Design notes
 
 - **Everything as code.** No manual Jenkins setup: plugins in `plugins.txt`, configuration in `casc.yaml`, the
@@ -139,4 +144,4 @@ project: [docs/interview-questions.md](docs/interview-questions.md) (also as
 
 ## License
 
-MIT
+[MIT](LICENSE)
