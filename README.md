@@ -42,7 +42,7 @@ Parameters: `TEST_SUITE` (`all` or `smoke`) and `KEEP_NAMESPACE` (keep the deplo
 
 ## The system under test
 
-**room-booking**, a meeting-room booking API in the repository (Node 24, TypeScript run directly, no
+**room-booking**, a meeting-room booking API in the repository (Node 26, TypeScript run directly, no
 dependencies): rooms, bookings with ISO date-times, overlap conflicts (409), capacity and length rules (400),
 `/health` for the probes and `/version` with the build number. 4 unit tests (`service/test`) and 17 API tests
 (`tests/`).

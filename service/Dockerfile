@@ -1,5 +1,5 @@
 # The room-booking image that the pipeline builds and deploys to Kubernetes.
-# No npm install: the service uses Node built-ins only, and Node 24 runs the TypeScript directly.
+# No npm install: the service uses Node built-ins only, and Node 26 runs the TypeScript directly.
 FROM node:26-alpine
 
 WORKDIR /app
