@@ -108,6 +108,8 @@ The published pytest-html report of the regression suite:
 The JUnit XML of jobs 1 and 2 (artifacts `reports-checks` and `reports-kubernetes`) is collected by
 [Automation Coverage & Quality Intelligence](https://github.com/niranjankagri/automation-coverage-quality-intelligence).
 
+CI also runs every Saturday at 22:30 UTC without a code change, so a broken dependency or a change outside the repository shows up within a week. Dependabot proposes dependency and GitHub Actions updates once a month (minor and patch updates grouped, major versions as separate pull requests).
+
 `main` is protected by a ruleset: every change goes through a pull request, and the CI jobs above must pass before it is merged.
 
 ## Design notes
