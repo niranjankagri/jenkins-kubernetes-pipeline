@@ -2,7 +2,7 @@
   "name": "room-booking",
   "version": "1.0.0",
   "private": true,
-  "description": "The system under test: a meeting-room booking API (Node 24, TypeScript run directly, no dependencies).",
+  "description": "The system under test: a meeting-room booking API (Node 26, TypeScript run directly, no dependencies).",
   "type": "module",
   "engines": {
     "node": ">=24"

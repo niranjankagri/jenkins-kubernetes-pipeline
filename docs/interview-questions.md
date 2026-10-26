@@ -5,7 +5,7 @@ automation interviews. Each answer has a short explanation and, where useful, an
 **In the project** pointer to where this repository does it (or why it does not). Links go to
 [github.com/niranjankagri/jenkins-kubernetes-pipeline](https://github.com/niranjankagri/jenkins-kubernetes-pipeline).
 
-Versions: Jenkins 2.580.1 LTS (JDK 21), Configuration as Code + Job DSL, kind 0.33, kubectl 1.37, Node 24,
+Versions: Jenkins 2.580.1 LTS (JDK 21), Configuration as Code + Job DSL, kind 0.33, kubectl 1.37, Node 26,
 pytest 9.
 
 ## Contents
@@ -404,7 +404,7 @@ to use it; Compose's `group_add` with the host's group ID does it.
 A slim base (alpine/slim), only what runs (no build tools), a non-root user, pinned base versions, a health
 check, and no secrets in layers.
 
-**In the project:** `service/Dockerfile`: node:24-alpine, no npm install, `USER node`, health check.
+**In the project:** `service/Dockerfile`: node:26-alpine, no npm install, `USER node`, health check.
 
 ### Q50. How do you tag images in a pipeline?
 

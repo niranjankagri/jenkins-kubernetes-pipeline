@@ -2,9 +2,9 @@
 # pre-installed. Configured entirely as code (casc.yaml): no setup wizard, no clicking.
 #
 # Tools: docker CLI (talks to the host's Docker through the mounted socket), kind + kubectl (Kubernetes),
-# Node 24 (the service's unit tests), Python 3 (the API tests).
+# Node 26 (the service's unit tests), Python 3 (the API tests).
 FROM docker:29.9.2-cli AS docker-cli
-FROM node:24-trixie-slim AS node
+FROM node:26-trixie-slim AS node
 
 FROM jenkins/jenkins:2.580.1-lts-jdk21
 
@@ -18,8 +18,10 @@ COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/docker-buildx
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 
+# libatomic1: the Node 26 binary copied above links against libatomic.so.1, which the Jenkins image
+# does not ship (Dependabot's Node 26 bump failed with "error while loading shared libraries")
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 python3-venv \
+ && apt-get install -y --no-install-recommends python3 python3-venv libatomic1 \
  && rm -rf /var/lib/apt/lists/* \
  # kind and kubectl, checked against their published SHA-256 sums.
  && curl -fsSLo /usr/local/bin/kind "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64" \
