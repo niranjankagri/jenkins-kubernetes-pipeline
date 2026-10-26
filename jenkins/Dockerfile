@@ -4,7 +4,7 @@
 # Tools: docker CLI (talks to the host's Docker through the mounted socket), kind + kubectl (Kubernetes),
 # Node 24 (the service's unit tests), Python 3 (the API tests).
 FROM docker:29.9.2-cli AS docker-cli
-FROM node:24-trixie-slim AS node
+FROM node:26-trixie-slim AS node
 
 FROM jenkins/jenkins:2.580.1-lts-jdk21
 
