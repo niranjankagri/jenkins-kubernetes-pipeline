@@ -6,7 +6,7 @@
 FROM docker:29.9.2-cli AS docker-cli
 FROM node:26-trixie-slim AS node
 
-FROM jenkins/jenkins:2.580.1-lts-jdk21
+FROM jenkins/jenkins:2.580.2-lts-jdk21
 
 USER root
 
