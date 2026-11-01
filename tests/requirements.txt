@@ -1,5 +1,5 @@
 # API tests of the deployed room-booking service.
-pytest==9.1.1
+pytest==9.2.0
 requests==2.34.2
 pytest-html==4.2.0
-ruff==0.17.2
+ruff==0.17.3
